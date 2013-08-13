@@ -43,15 +43,23 @@ You should be already to go.
 
 ## Usage
 
-Edit app.config to set your storage backend to use `riak_kv_yesmaam_backend`
+Edit app.config to set your storage backend to use `riak_kv_yesmaam_backend` and optionally set the `yesmaam_mode` flag to have the backend return `not_found` for every `GET` request.
 
 ```
 %% Riak KV config
 {riak_kv, [
             {storage_backend, riak_kv_yesmaam_backend},
-            ...
+
+            %% the available modes are yes_maam and no_maam
+            %%
+            %% yes_maam: returns a static object on GET.
+            %% no_maam: returns not_found on GET.
+            %%
+            %% defaults to yes_maam
+            {yesmaam_mode, yes_maam},
           ]},
-```    
+```
+
 
 ## License
 

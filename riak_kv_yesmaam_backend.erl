@@ -75,13 +75,20 @@ capabilities(_, _) ->
 %% @doc Start this backend, yes, ma'am!
 -spec start(integer(), config()) -> {ok, state()} | {error, term()}.
 start(_Partition, _Config) ->
-    Meta = dict:new(),
-    Meta1 = dict:store(<<"X-Riak-Last-Modified">>, erlang:now(), Meta),
-    Meta2 = dict:store(<<"X-Riak-VTag">>, make_vtag(erlang:now()), Meta1),
+    Mode = app_helper:get_env(riak_kv, yesmaam_mode, yes_maam),
 
-    Object = riak_object:increment_vclock(riak_object:new(<<"yesmaam!">>, <<"yesmaam!">>, <<"yesmaam!">>, Meta2), <<"yesmaam!">>, 1),
-    
-    {ok, #state{static_obj=term_to_binary(Object)}}.
+    case Mode of 
+        yes_maam ->
+            Meta = dict:new(),
+            Meta1 = dict:store(<<"X-Riak-Last-Modified">>, erlang:now(), Meta),
+            Meta2 = dict:store(<<"X-Riak-VTag">>, make_vtag(erlang:now()), Meta1),
+
+            Object = riak_object:increment_vclock(riak_object:new(<<"yesmaam!">>, <<"yesmaam!">>, <<"yesmaam!">>, Meta2), <<"yesmaam!">>, 1),
+            
+            {ok, #state{static_obj=term_to_binary(Object)}};
+        no_maam ->
+            {ok, #state{static_obj=not_found}}
+    end.
 
 %% @doc Stop this backend, yes, ma'am!
 -spec stop(state()) -> ok.
@@ -91,6 +98,8 @@ stop(_State) ->
 %% @doc Get a fake object, yes, ma'am!
 -spec get(riak_object:bucket(), riak_object:key(), state()) ->
                  {ok, any(), state()}.
+get(_Bucket, _Key, #state{static_obj = not_found} = State) ->
+    {error, not_found, State};
 get(_Bucket, _Key, #state{static_obj = Object} = State) ->
     {ok, Object, State}.
 
